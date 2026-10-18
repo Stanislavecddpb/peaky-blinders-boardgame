@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+.vite/
+
+# Сырые сканы ассетов — в git не храним
+tools/assets/raw/
+# Скриншоты проверок
+/shots/
+data/
