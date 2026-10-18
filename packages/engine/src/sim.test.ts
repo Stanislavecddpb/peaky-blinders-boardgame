@@ -55,7 +55,7 @@ function playRandom(n: number, seed: number): BBState {
   const shuffle = shuffleWith(r);
   const G = setupGame(n, shuffle);
   for (let i = 0; i < n; i++) {
-    applySetName(G, String(i), `P${i}`);
+    applySetName(G, String(i), String(i), `P${i}`);
     applySetColor(G, String(i), String(i), COLORS[i]);
   }
   applyStart(G, '0');

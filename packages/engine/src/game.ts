@@ -31,7 +31,7 @@ export const BrassGame: Game<BBState> = {
       endIf: ({ G }) => G.started,
       turn: { activePlayers: { all: 'default' } },
       moves: {
-        setName: ({ G, playerID }, name: string) => check(applySetName(G, playerID, name)),
+        setName: ({ G, playerID }, name: string, forPid?: string) => check(applySetName(G, playerID, forPid ?? playerID, name)),
         setColor: ({ G, playerID }, color: Color, forPid?: string) => check(applySetColor(G, playerID, forPid ?? playerID, color)),
         startGame: ({ G, playerID }) => check(applyStart(G, playerID)),
       },

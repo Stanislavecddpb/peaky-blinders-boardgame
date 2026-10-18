@@ -73,8 +73,9 @@ export function setupGame(numPlayers: number, shuffle: Shuffle): BBState {
   };
 }
 
-export function applySetName(G: BBState, pid: string, name: string): string | null {
+export function applySetName(G: BBState, actor: string, pid: string, name: string): string | null {
   if (G.started) return 'Игра уже началась';
+  if (actor !== pid && actor !== '0') return 'Имя меняет сам игрок или хост';
   const n = name.trim().slice(0, 20);
   if (!n || !G.players[pid]) return 'Пустое имя';
   G.players[pid].name = n;

@@ -137,6 +137,17 @@ export function takeIron(G: BBState, pid: string, need: number, picks?: ResPick[
   return null;
 }
 
+/** Источники угля/железа по умолчанию (ближайшие по очереди) и сколько докупить на рынке. */
+export function defaultCoalPicks(G: BBState, at: NodeId[], need: number): { picks: ResPick[]; market: number } {
+  const picks = resolvePicks(coalSources(G, at), need, undefined, true) as ResPick[];
+  return { picks, market: need - picks.reduce((a, p) => a + p.n, 0) };
+}
+
+export function defaultIronPicks(G: BBState, need: number): { picks: ResPick[]; market: number } {
+  const picks = resolvePicks(ironSources(G), need, undefined, false) as ResPick[];
+  return { picks, market: need - picks.reduce((a, p) => a + p.n, 0) };
+}
+
 export const merchantAccepts = (tile: MerchantTile, industry: Industry): boolean =>
   tile === 'any' || tile === industry;
 
@@ -174,7 +185,25 @@ export function beerOptions(G: BBState, pid: string, at: NodeId[], sell?: { merc
   return [...out, ...own, ...other];
 }
 
-const pickKey = (p: BeerPick) => (p.kind === 'merchant' ? `m:${p.merchant}:${p.idx}` : `b:${p.loc}:${p.slot}`);
+/** Пиво по умолчанию: одна бочка торговца (бонус), дальше свои пивоварни, затем чужие. null — не хватает. */
+export function defaultBeerPicks(options: BeerOption[], need: number): BeerPick[] | null {
+  const chosen: BeerPick[] = [];
+  let left = need;
+  let merchantTaken = false;
+  for (const o of options) {
+    if (left === 0) break;
+    if (o.pick.kind === 'merchant') {
+      if (merchantTaken) continue;
+      merchantTaken = true;
+    }
+    const n = Math.min(left, o.avail);
+    for (let i = 0; i < n; i++) chosen.push(o.pick);
+    left -= n;
+  }
+  return left > 0 ? null : chosen;
+}
+
+export const pickKey = (p: BeerPick) => (p.kind === 'merchant' ? `m:${p.merchant}:${p.idx}` : `b:${p.loc}:${p.slot}`);
 
 export interface BeerResult {
   error: string | null;
@@ -190,6 +219,7 @@ export function takeBeer(
   const options = beerOptions(G, pid, at, sell);
   let chosen: BeerPick[] = [];
   if (picks) {
+    if (picks.filter((p) => p.kind === 'merchant').length > 1) return { error: 'Не больше одной бочки торговца', merchantUsed: 0 };
     if (picks.length !== need) return { error: `Нужно пива: ${need}`, merchantUsed: 0 };
     const used = new Map<string, number>();
     for (const p of picks) {
@@ -201,20 +231,9 @@ export function takeBeer(
     }
     chosen = picks;
   } else {
-    // По умолчанию одна бочка торговца (бонус), дальше свои, затем чужие.
-    let left = need;
-    let merchantTaken = false;
-    for (const o of options) {
-      if (o.pick.kind === 'merchant') {
-        if (merchantTaken) continue;
-        merchantTaken = true;
-      }
-      const n = Math.min(left, o.avail);
-      for (let i = 0; i < n; i++) chosen.push(o.pick);
-      left -= n;
-      if (left === 0) break;
-    }
-    if (left > 0) return { error: 'Не хватает пива', merchantUsed: 0 };
+    const d = defaultBeerPicks(options, need);
+    if (!d) return { error: 'Не хватает пива', merchantUsed: 0 };
+    chosen = d;
   }
   let merchantUsed = 0;
   const parts: string[] = [];

@@ -7,7 +7,7 @@ import { COLORS, type Action, type BBState, type Industry, type PlacedTile } fro
 export function newGame(n = 2): BBState {
   const G = setupGame(n, (a) => [...a]);
   for (let i = 0; i < n; i++) {
-    applySetName(G, String(i), `P${i}`);
+    applySetName(G, String(i), String(i), `P${i}`);
     applySetColor(G, String(i), String(i), COLORS[i]);
   }
   applyStart(G, '0');
