@@ -82,14 +82,17 @@ export function useWizard({ G, me, moves, undo, active, turnKey }: {
   const mine = me ? G.players[me] : null;
   const hand = mine?.hand ?? [];
 
-  // Варианты постройки по картам руки (только когда выбрано «Строить»).
+  // Варианты постройки по картам руки — считаем в свой ход, чтобы заранее знать, есть ли что строить.
   const buildMap = useMemo(() => {
-    if (!me || d?.kind !== 'build') return null;
+    if (!me || !active || G.actionsLeft <= 0) return null;
     const m = new Map<string, BuildTarget[]>();
     for (const c of uniqueCards(hand)) m.set(faceOf(c), buildTargets(G, me, c));
     return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [G, me, d?.kind]);
+  }, [G, me, active]);
+  const anyLink = useMemo(() => (me && active && hand.length && G.actionsLeft > 0 ? linkTargets(G, me, hand[0]).length > 0 : false),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [G, me, active]);
   const targetsFor = (card: string | null) => (card && buildMap?.get(faceOf(card))) || [];
 
   const linkCands = useMemo(() => {
@@ -350,8 +353,8 @@ export function useWizard({ G, me, moves, undo, active, turnKey }: {
   }
 
   const kinds: { kind: Kind; ok: boolean; why?: string }[] = [
-    { kind: 'build', ok: true },
-    { kind: 'network', ok: mine.linksLeft > 0, why: 'жетоны связей кончились' },
+    { kind: 'build', ok: !!buildMap && [...buildMap.values()].some((t) => t.length), why: 'строить нечего: не хватает денег, ресурсов или подходящих карт' },
+    { kind: 'network', ok: anyLink, why: mine.linksLeft > 0 ? 'связь сейчас построить нельзя (деньги, уголь или сеть)' : 'жетоны связей кончились' },
     { kind: 'develop', ok: developIndustries(G, me).length > 0 },
     { kind: 'sell', ok: sellTargets(G, me).length > 0, why: 'нечего продать' },
     { kind: 'loan', ok: canLoan(G, me), why: 'доход не может опуститься ниже −10' },

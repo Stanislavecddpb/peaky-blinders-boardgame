@@ -110,7 +110,8 @@ export function doLoan(G: BBState, pid: string, card: string): string | null {
   discardCard(G, pid, card);
   p.money += 30;
   p.incomeSpace = space;
-  log(G, `${nameOf(G, pid)} берёт заём £30 (доход теперь ${incomeLevel(space)})`, pid);
+  const lvl = incomeLevel(space);
+  log(G, `${nameOf(G, pid)} берёт заём £30 (доход теперь ${lvl < 0 ? `−${-lvl}` : lvl})`, pid);
   return null;
 }
 

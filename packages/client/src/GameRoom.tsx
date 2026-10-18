@@ -69,7 +69,7 @@ export function GameRoom({ matchID }: { matchID: string }) {
   }
 
   return (
-    <Page title="Сбор за столом" subtitle={`Комната ${matchID} — займите место.`}>
+    <Page title="Комната" subtitle={`Комната ${matchID} — займите место.`}>
       {error && <div className="err">{error}</div>}
       <section className="page-card">
         <h2>Места</h2>

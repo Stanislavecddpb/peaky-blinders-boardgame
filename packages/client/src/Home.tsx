@@ -34,7 +34,7 @@ export function Home() {
     <Page subtitle="Промышленная революция в Бирмингеме, 1770–1870: каналы, железные дороги, хлопок, уголь и пиво.">
       <div className="home">
         <section className="page-card">
-          <h2>Созвать игру</h2>
+          <h2>Игра по сети</h2>
           <label>Ваше имя
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} />
           </label>
@@ -54,7 +54,7 @@ export function Home() {
           <button className="btn ghost" disabled={!joinCode.trim()} onClick={joinByCode}>Присоединиться</button>
         </section>
 
-        <a className="page-link" href="#/local">Локальная игра за одним компьютером →</a>
+        <a className="page-link" href="#/local">Игра за одним компьютером →</a>
       </div>
     </Page>
   );
