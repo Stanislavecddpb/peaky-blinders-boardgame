@@ -250,3 +250,10 @@ a { color: var(--brass-2); }
 .player { transition: box-shadow 0.2s; }
 .table-side::-webkit-scrollbar, .hand::-webkit-scrollbar, .rules-body::-webkit-scrollbar { width: 8px; height: 8px; }
 .table-side::-webkit-scrollbar-thumb, .hand::-webkit-scrollbar-thumb, .rules-body::-webkit-scrollbar-thumb { background: #3a4252; border-radius: 4px; }
+
+/* Встроено в платформу Zarya Boardgames */
+.embed .back,
+.embed .page-link,
+.embed .greek-link {
+  display: none;
+}
