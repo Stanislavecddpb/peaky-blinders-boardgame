@@ -41,9 +41,9 @@ def build_cards() -> None:
         i = int(cell)
         x, y = (i % cols) * cw, (i // cols) * ch
         card = sheet.crop((round(x), round(y), round(x + cw), round(y + ch)))
-        save(card.resize((300, 421), Image.LANCZOS), OUT / 'cards' / f'{name}.webp')
+        save(card.resize((440, 618), Image.LANCZOS), OUT / 'cards' / f'{name}.webp')
     back = Image.open(RAW / 'cards' / 'back.png').convert('RGB')
-    save(back.resize((300, 421), Image.LANCZOS), OUT / 'cards' / 'back.webp')
+    save(back.resize((440, 618), Image.LANCZOS), OUT / 'cards' / 'back.webp')
 
 
 def copy_dir(name: str, size: int | None = None) -> None:

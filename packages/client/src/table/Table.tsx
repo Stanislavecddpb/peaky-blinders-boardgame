@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { BoardProps } from 'boardgame.io/react';
-import { currentPid, deckSize, type BBState } from '@bb/engine';
+import { currentPid, deckSize, nextBuyPrice, type BBState } from '@bb/engine';
 import { Board } from './Board';
 import { Hand } from './Hand';
 import { Lobby } from './Lobby';
@@ -8,6 +8,7 @@ import { Log } from './Log';
 import { Mat } from './Mat';
 import { EraModal, GameOver, Handoff } from './Modals';
 import { Players } from './Players';
+import { Rules } from './Rules';
 import { useWizard } from './Wizard';
 
 /** В хотсите — переключить «сиденье» клиента на игрока. */
@@ -69,6 +70,14 @@ export interface TableProps {
 
 export function Table({ G, ctx, moves, undo, me, matchData, hotseat, hideHand }: TableProps) {
   const [matFor, setMatFor] = useState<string | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setMatFor(null); setRulesOpen(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const nameOf = (pid: string) =>
     matchData?.find((m) => String(m.id) === pid)?.name || G.players[pid]?.name || `Игрок ${Number(pid) + 1}`;
 
@@ -96,14 +105,17 @@ export function Table({ G, ctx, moves, undo, me, matchData, hotseat, hideHand }:
     <div className="table">
       <div className="table-main">
         <Board G={G} hl={wiz.hl} onSlot={wiz.onSlot} onLink={wiz.onLink} />
-        {showMat && (
+        {showMat && !rulesOpen && (
           <Mat G={G} pid={showMat} pick={showMat === me ? wiz.matPick : undefined}
             onClose={() => setMatFor(null)} />
         )}
+        {rulesOpen && <Rules onClose={() => setRulesOpen(false)} />}
         {mine && (
           <div className="hand-bar">
             <div className="hand-side">
-              <button className="btn small" onClick={() => setMatFor(matFor === me ? null : me)}>Мой планшет</button>
+              <button className={`btn small ${rulesOpen ? '' : 'ghost'}`} onClick={() => setRulesOpen(!rulesOpen)}>📜 Правила</button>
+              <button className={`btn small ${showMat === me && !rulesOpen ? '' : 'ghost'}`}
+                onClick={() => { setRulesOpen(false); setMatFor(matFor === me ? null : me); }}>🏭 Мой планшет</button>
               <div className="hint">Карт: {mine.hand.length}</div>
             </div>
             <Hand cards={mine.hand} select={wiz.hand} hidden={hideHand} />
@@ -112,7 +124,11 @@ export function Table({ G, ctx, moves, undo, me, matchData, hotseat, hideHand }:
       </div>
       <aside className="table-side">
         <div className="status">
-          <div><b>{eraRu}</b> · раунд {G.round} · колода {deckSize(G)}</div>
+          <div className="status-row"><b>{eraRu}</b><span>раунд {G.round}</span><span title="Карт в колоде">🂠 {deckSize(G)}</span></div>
+          <div className="status-row market" title="Кубов на рынке и цена следующего куба">
+            <span><i className="cube-ico coal" /> уголь {G.coal}/14 · £{nextBuyPrice('coal', G.coal)}</span>
+            <span><i className="cube-ico iron" /> железо {G.iron}/10 · £{nextBuyPrice('iron', G.iron)}</span>
+          </div>
           {cur && !G.gameover && (
             <div className={`now ${cur === me ? 'mine' : ''}`}>
               {cur === me ? 'Ваш ход' : `Ходит ${nameOf(cur)}…`} · действий осталось {G.actionsLeft}
@@ -120,7 +136,7 @@ export function Table({ G, ctx, moves, undo, me, matchData, hotseat, hideHand }:
           )}
         </div>
         {wiz.panel}
-        <Players G={G} me={me} onMat={(pid) => setMatFor(matFor === pid ? null : pid)} />
+        <Players G={G} me={me} onMat={(pid) => { setRulesOpen(false); setMatFor(matFor === pid ? null : pid); }} />
         <Log G={G} />
       </aside>
       <EraModal G={G} nameOf={nameOf} />

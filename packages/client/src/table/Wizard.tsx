@@ -53,6 +53,23 @@ function toAction(d: Draft): Action | null {
   }
 }
 
+const ICON: Record<Kind, string> = {
+  build: '🏭', network: '⛓', develop: '⚙️', sell: '💰', loan: '🏦', scout: '🔍', pass: '⏭',
+};
+
+/** Короткая подсказка под названием кнопки. */
+function costHint(kind: Kind, era: 'canal' | 'rail'): string {
+  switch (kind) {
+    case 'build': return 'плитка с планшета';
+    case 'network': return era === 'canal' ? 'канал £3' : 'ж/д £5 + уголь';
+    case 'develop': return '1–2 плитки, железо';
+    case 'sell': return 'нужно пиво';
+    case 'loan': return '+£30, доход −3';
+    case 'scout': return '3 карты → 2 джокера';
+    case 'pass': return 'сбросить карту';
+  }
+}
+
 const HELP: Record<Kind, string> = {
   build: 'Карта локации — строить в этом городе; карта отрасли — эту отрасль в своей сети; джокеры — что угодно.',
   network: 'Каналы — £3 за связь. Ж/д — £5 + уголь, или две за £15 + 2 угля + пиво. Связь примыкает к вашей сети.',
@@ -78,6 +95,11 @@ export function useWizard({ G, me, moves, undo, active, turnKey }: {
   const [d, setD] = useState<Draft | null>(null);
   const upd = (patch: Partial<Draft>) => setD((x) => (x ? { ...x, ...patch } : x));
   useEffect(() => setD(null), [turnKey, G.actionsDone]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setD(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const mine = me ? G.players[me] : null;
   const hand = mine?.hand ?? [];
@@ -331,7 +353,7 @@ export function useWizard({ G, me, moves, undo, active, turnKey }: {
     body = (
       <div className="draft">
         <div className="draft-head">
-          <b>{ACTION_RU[d.kind]}</b>
+          <b>{ICON[d.kind]} {ACTION_RU[d.kind]}</b>
           {d.card && <span className="hint"> · карта: {cardName(d.card)}</span>}
           <button className="btn small ghost" onClick={() => setD(null)}>Отмена</button>
         </div>
@@ -347,7 +369,8 @@ export function useWizard({ G, me, moves, undo, active, turnKey }: {
               </div>
             )
         )}
-        <button className="btn" disabled={!action || !!preview?.error} onClick={act}>Подтвердить</button>
+        <button className="btn confirm" disabled={!action || !!preview?.error} onClick={act}>Подтвердить{action && !preview?.error ? ' ✓' : ''}</button>
+        <div className="hint kbd-hint">Esc — отменить выбор</div>
       </div>
     );
   }
@@ -367,11 +390,14 @@ export function useWizard({ G, me, moves, undo, active, turnKey }: {
     <div className="wizard">
       {canAct && !d && (
         <>
-          <div className="step">Ваш ход: осталось действий — <b>{G.actionsLeft}</b>. Выберите действие:</div>
+          <div className="step">Выберите действие <span className="pips">{Array.from({ length: G.actionsLeft }, (_, i) => <i key={i} />)}</span></div>
           <div className="action-grid">
             {kinds.map((k) => (
-              <button key={k.kind} className={`btn action-${k.kind}`} disabled={!k.ok} title={k.ok ? HELP[k.kind] : k.why}
-                onClick={() => setD(empty(k.kind))}>{ACTION_RU[k.kind]}</button>
+              <button key={k.kind} className={`btn action action-${k.kind}`} disabled={!k.ok} title={k.ok ? HELP[k.kind] : k.why}
+                onClick={() => setD(empty(k.kind))}>
+                <span className="action-icon">{ICON[k.kind]}</span>
+                <span className="action-text">{ACTION_RU[k.kind]}<small>{k.ok ? costHint(k.kind, G.era) : k.why}</small></span>
+              </button>
             ))}
           </div>
         </>

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  INDUSTRY_SHORT, LINKS, LOCATIONS, MERCHANTS, ROMAN, deckSize, incomeLevel, isMerchant, linkName, nameOf, slotKey,
-  type BBState, type Color, type MerchantId, type NodeId,
+  INDUSTRY_RU, INDUSTRY_SHORT, LINKS, LOCATIONS, MERCHANTS, ROMAN, deckSize, incomeLevel, isMerchant, linkName, nameOf, slotKey, tileDef,
+  type BBState, type Color, type MerchantId, type MerchantTile, type NodeId, type PlacedTile,
 } from '@bb/engine';
 import { BEER, BOARD, COLOR_HEX, avatarImg, merchantImg, tileImg } from './assets';
 import {
@@ -16,6 +16,26 @@ export interface BoardHL {
   selected?: Set<string>;
   links?: Set<number>;
   selectedLinks?: Set<number>;
+}
+
+const MERCHANT_TILE_RU: Record<MerchantTile, string> = {
+  any: 'всё', cotton: 'хлопок', manufacturer: 'мануфактуру', pottery: 'гончарню', blank: '—',
+};
+const BONUS_RU: Record<string, string> = { vp: 'ПО', income: 'доход', money: '£', develop: 'развитие' };
+
+function tileTip(G: BBState, loc: string, t: PlacedTile): ReactNode {
+  const d = tileDef(t.industry, t.level);
+  const res = t.industry === 'coal' ? 'угля' : t.industry === 'iron' ? 'железа' : 'пива';
+  return (
+    <>
+      <b>{LOCATIONS[loc].ru}</b>
+      <div>{INDUSTRY_RU[t.industry]} {ROMAN[t.level]} — {nameOf(G, t.owner)}</div>
+      <div className="tip-dim">
+        {t.flipped ? 'перевёрнута' : t.industry === 'coal' || t.industry === 'iron' || t.industry === 'brewery' ? `осталось ${res}: ${t.res}` : `для продажи пива: ${d.beer}`}
+      </div>
+      <div className="tip-dim">★ {d.vp} ПО · доход +{d.income} · ⛓ {d.linkVp}</div>
+    </>
+  );
 }
 
 const W = CROP.size;
@@ -75,6 +95,12 @@ export function Board({ G, hl, onSlot, onLink }: {
   viewRef.current = view;
   const pan = useRef<{ px: number; py: number; view: View; moved: boolean } | null>(null);
   const changed = useChanged(G);
+  const [tip, setTip] = useState<{ x: number; y: number; body: ReactNode } | null>(null);
+  /** Обработчики всплывающей подсказки для элемента поля. */
+  const tipFor = (body: () => ReactNode) => ({
+    onMouseMove: (e: React.MouseEvent) => setTip({ x: e.clientX, y: e.clientY, body: body() }),
+    onMouseLeave: () => setTip(null),
+  });
   const colorOf = (pid: string): Color => G.players[pid]?.color ?? 'orange';
 
   function clamp(v: View): View {
@@ -146,8 +172,8 @@ export function Board({ G, hl, onSlot, onLink }: {
           const m = LINK_MIDPOINTS[i];
           const col = COLOR_HEX[colorOf(owner)];
           return (
-            <g key={`l${i}`} className={`link built ${changed.links.has(i) ? 'changed' : ''}`}>
-              <title>{`${linkName(i)} — ${nameOf(G, owner)}`}</title>
+            <g key={`l${i}`} className={`link built ${changed.links.has(i) ? 'changed' : ''}`}
+              {...tipFor(() => <><b>{linkName(i)}</b><div>{G.era === 'canal' ? 'Канал' : 'Железная дорога'} — {nameOf(G, owner)}</div></>)}>
               <path d={linkPath(i)} className="link-shadow" />
               <path d={linkPath(i)} className="link-line" style={{ stroke: col }} />
               {G.era === 'rail' && <path d={linkPath(i)} className="link-ties" />}
@@ -160,8 +186,8 @@ export function Board({ G, hl, onSlot, onLink }: {
           const m = LINK_MIDPOINTS[i];
           const sel = hl.selectedLinks?.has(i);
           return (
-            <g key={`c${i}`} className={`link cand ${sel ? 'sel' : ''}`} onClick={clickable(() => onLink?.(i))}>
-              <title>{linkName(i)}</title>
+            <g key={`c${i}`} className={`link cand ${sel ? 'sel' : ''}`} onClick={clickable(() => onLink?.(i))}
+              {...tipFor(() => <><b>{linkName(i)}</b><div className="tip-dim">кликните, чтобы выбрать</div></>)}>
               <path d={linkPath(i)} className="link-hit" />
               <path d={linkPath(i)} className="link-cand" />
               <circle cx={m.x} cy={m.y} r={58} className="link-cand-dot" />
@@ -180,15 +206,12 @@ export function Board({ G, hl, onSlot, onLink }: {
           const t = G.slots[loc]?.[slot];
           const key = slotKey(loc, slot);
           const icons = LOCATIONS[loc].slots[slot].map((i) => INDUSTRY_SHORT[i]).join(' / ');
-          const title = t
-            ? `${LOCATIONS[loc].ru}: ${INDUSTRY_SHORT[t.industry]} ${ROMAN[t.level]} — ${nameOf(G, t.owner)}${t.flipped ? ' (перевёрнута)' : ''}`
-            : `${LOCATIONS[loc].ru}: ${icons}`;
           const isHl = hl.slots?.has(key);
           const isSel = hl.selected?.has(key);
           return (
             <g key={key} className={`slot ${isHl ? 'hl' : ''} ${isSel ? 'sel' : ''} ${changed.slots.has(key) ? 'changed' : ''}`}
-              onClick={isHl ? clickable(() => onSlot?.(loc, slot)) : undefined}>
-              <title>{title}</title>
+              onClick={isHl ? clickable(() => onSlot?.(loc, slot)) : undefined}
+              {...tipFor(() => (t ? tileTip(G, loc, t) : <><b>{LOCATIONS[loc].ru}</b><div className="tip-dim">свободный слот: {icons}</div></>))}>
               {t && <image href={tileImg(t.industry, t.level, colorOf(t.owner), t.flipped)} x={r.x - 4} y={r.y - 4} width={r.w + 8} height={r.h + 8} />}
               {t && !t.flipped && t.res > 0 && <Resources x={r.x} y={r.y + r.h} w={r.w} kind={t.industry} n={t.res} />}
               <rect x={r.x - 6} y={r.y - 6} width={r.w + 12} height={r.h + 12} rx={14} className="slot-frame" />
@@ -201,8 +224,18 @@ export function Board({ G, hl, onSlot, onLink }: {
           const g = MERCHANT_GEOM[m];
           const st = G.merchants[m];
           return (
-            <g key={m}>
-              <title>{`${MERCHANTS[m].ru}${st.tiles.length ? '' : ' — не используется'}`}</title>
+            <g key={m} {...tipFor(() => (
+              <>
+                <b>Торговец {MERCHANTS[m].ru}</b>
+                {st.tiles.length
+                  ? <>
+                      <div>Покупает: {[...new Set(st.tiles.filter((t) => t !== 'blank').map((t) => MERCHANT_TILE_RU[t]))].join(', ') || 'ничего'}</div>
+                      <div className="tip-dim">Бонус за его пиво: {MERCHANTS[m].bonus.kind === 'develop' ? 'бесплатное развитие' : `+${MERCHANTS[m].bonus.amount} ${BONUS_RU[MERCHANTS[m].bonus.kind]}`}</div>
+                      <div className="tip-dim">Бочек: {st.beer.filter(Boolean).length}</div>
+                    </>
+                  : <div className="tip-dim">в этой партии не используется (но связь с ним считается)</div>}
+              </>
+            ))}>
               {st.tiles.map((tile, i) => (
                 <image key={i} href={merchantImg(tile)} x={g.tiles[i].x} y={g.tiles[i].y} width={g.tiles[i].w} height={g.tiles[i].h} />
               ))}
@@ -247,6 +280,7 @@ export function Board({ G, hl, onSlot, onLink }: {
         <DeckLabel r={DECK_RECTS.wildIndustry} text={`Любая отрасль: ${G.wild.industry}`} />
         <DeckLabel r={DECK_RECTS.wildLocation} text={`Любая локация: ${G.wild.location}`} />
       </svg>
+      {tip && <div className="board-tip" style={{ left: Math.min(tip.x + 16, window.innerWidth - 290), top: Math.min(tip.y + 16, window.innerHeight - 130) }}>{tip.body}</div>}
       {zoomed && <button className="btn small zoom-reset" onClick={() => setView(full)}>⤢ Всё поле</button>}
     </div>
   );

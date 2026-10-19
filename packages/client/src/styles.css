@@ -118,6 +118,7 @@ a { color: var(--brass-2); }
 .hand-card:hover img { box-shadow: 0 0 0 2px #fff4, var(--shadow); }
 .hand-hidden { align-items: center; justify-content: center; color: var(--muted); }
 .hand-card { padding: 0; border: 2px solid transparent; border-radius: 8px; background: none; flex-shrink: 0; transition: transform 0.15s; line-height: 0; }
+.hand-card { position: relative; }
 .hand-card img { height: 124px; border-radius: 6px; box-shadow: var(--shadow); }
 .hand-card:disabled { opacity: 1; cursor: default; }
 .hand-card.can { border-color: #ffd84a99; cursor: pointer; }
@@ -199,3 +200,53 @@ a { color: var(--brass-2); }
 .score th, .score td { border-bottom: 1px solid var(--line); padding: 4px 8px; text-align: left; }
 .score tr.win td { background: #c9a45c22; }
 .gameover-restore { position: fixed; right: 400px; top: 50px; z-index: 15; }
+
+/* ---- Улучшения интерфейса ---- */
+.card-preview { position: fixed; z-index: 30; pointer-events: none; border-radius: 16px; box-shadow: 0 12px 44px #000c, 0 0 0 2px #c9a45c66;
+  animation: pop 0.12s ease-out; }
+@keyframes pop { from { transform: scale(0.92); opacity: 0.4; } }
+.hand-card:hover { transform: translateY(-8px); }
+.hand-card.dim:hover { transform: none; }
+.hand-card-name { position: absolute; left: 4px; right: 4px; bottom: 4px; font-size: 0.68rem; line-height: 1.2; padding: 2px 3px;
+  background: #000b; color: #f2e8d4; border-radius: 0 0 5px 5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hand-card[aria-disabled='true'] { cursor: default; }
+.hand-side .btn { width: 140px; text-align: left; }
+
+.rules { position: absolute; left: 10px; bottom: 158px; z-index: 5; width: min(620px, calc(100% - 20px)); max-height: calc(100% - 180px);
+  display: flex; flex-direction: column; background: #161a22f5; border: 1px solid var(--brass); border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow); }
+.rules-body { overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.rules-sec { border: 1px solid var(--line); border-radius: 6px; background: #0f1218; }
+.rules-sec.open { border-color: #c9a45c88; }
+.rules-title { width: 100%; text-align: left; background: none; border: none; padding: 6px 10px; font-weight: 600; color: var(--brass-2); }
+.rules-title span { display: inline-block; width: 1em; }
+.rules-text { padding: 0 12px 8px; line-height: 1.5; font-size: 0.88rem; }
+.rules-text ul { margin: 0; padding-left: 1.1rem; }
+.rules-text li { margin-bottom: 4px; }
+.rules-text p { margin: 0 0 6px; }
+
+.board-tip { position: fixed; z-index: 25; pointer-events: none; background: #0b0e13f2; border: 1px solid var(--brass); border-radius: 6px;
+  padding: 6px 10px; font-size: 0.85rem; line-height: 1.4; max-width: 280px; box-shadow: var(--shadow); }
+.board-tip b { color: var(--brass-2); }
+.tip-dim { color: var(--muted); }
+
+.status { display: flex; flex-direction: column; gap: 3px; }
+.status-row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.status-row.market { font-size: 0.82rem; color: var(--muted); }
+.cube-ico { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; }
+.cube-ico.coal { background: #0b0c0e; border: 2px solid #d8d8d8; }
+.cube-ico.iron { background: #d9792b; border: 1px solid #000; }
+
+.action-grid .btn.action { display: flex; align-items: center; gap: 8px; text-align: left; padding: 0.4rem 0.6rem; }
+.action-icon { font-size: 1.3rem; line-height: 1; }
+.action-text { display: flex; flex-direction: column; line-height: 1.15; }
+.action-text small { font-weight: 400; font-size: 0.72rem; opacity: 0.75; }
+.action-grid .btn.action:disabled small { white-space: normal; }
+.pips { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.pips i { width: 10px; height: 10px; border-radius: 50%; background: var(--hl); box-shadow: 0 0 6px #ffd84a88; }
+.btn.confirm:not(:disabled) { background: linear-gradient(#7fd39b, #3f9a5e); border-color: #6cc28a; }
+.kbd-hint { font-size: 0.72rem; }
+.player-stats .neg { color: var(--red); }
+.player-stats .pos { color: var(--green); }
+.player { transition: box-shadow 0.2s; }
+.table-side::-webkit-scrollbar, .hand::-webkit-scrollbar, .rules-body::-webkit-scrollbar { width: 8px; height: 8px; }
+.table-side::-webkit-scrollbar-thumb, .hand::-webkit-scrollbar-thumb, .rules-body::-webkit-scrollbar-thumb { background: #3a4252; border-radius: 4px; }

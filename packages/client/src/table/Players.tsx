@@ -22,7 +22,9 @@ export function Players({ G, me, onMat }: { G: BBState; me: string | null; onMat
               </div>
               <div className="player-stats">
                 <span title="Победные очки">★ {p.vp} ПО</span>
-                <span title={`Уровень дохода (клетка ${p.incomeSpace})`}>доход {fmt(incomeLevel(p.incomeSpace))}</span>
+                <span title={`Уровень дохода (клетка ${p.incomeSpace})`} className={incomeLevel(p.incomeSpace) < 0 ? 'neg' : incomeLevel(p.incomeSpace) > 0 ? 'pos' : ''}>
+                  доход {fmt(incomeLevel(p.incomeSpace))}
+                </span>
                 <span title="Потрачено в этом раунде — меньше тратишь, раньше ходишь">трат £{p.spent}</span>
               </div>
               <div className="player-stats">

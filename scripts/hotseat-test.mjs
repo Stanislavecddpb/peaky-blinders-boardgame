@@ -25,6 +25,15 @@ const click = (text, scope = 'body') => page.evaluate((text, scope) => {
   return true;
 }, text, scope);
 
+const KIND = { 'Строить': 'build', 'Сеть': 'network', 'Развивать': 'develop', 'Продать': 'sell', 'Заём': 'loan', 'Разведка': 'scout', 'Пропуск': 'pass' };
+/** Кликнуть кнопку действия в панели хода. */
+const clickAction = (ru) => page.evaluate((k) => {
+  const b = document.querySelector(`.action-grid .action-${k}`);
+  if (!b || b.disabled) return false;
+  b.click();
+  return true;
+}, KIND[ru]);
+
 /** Кликнуть случайный элемент по селектору. */
 const clickRandom = (sel) => page.evaluate((sel) => {
   const els = [...document.querySelectorAll(sel)].filter((e) => !e.disabled);
@@ -61,7 +70,9 @@ while (turns < MAX_TURNS) {
   }
 
   // Выбор действия: сначала пробуем «полезные».
-  const kinds = await page.evaluate(() => [...document.querySelectorAll('.action-grid button')].filter((b) => !b.disabled).map((b) => b.textContent));
+  const RU = { build: 'Строить', network: 'Сеть', develop: 'Развивать', sell: 'Продать', loan: 'Заём', scout: 'Разведка', pass: 'Пропуск' };
+  const kinds = await page.evaluate((RU) => [...document.querySelectorAll('.action-grid button')].filter((b) => !b.disabled)
+    .map((b) => RU[[...b.classList].find((c) => c.startsWith('action-')).slice(7)]), RU);
   if (!kinds.length) {
     stuck++;
     if (stuck > 30) { console.log('ЗАСТРЯЛИ'); break; }
@@ -73,7 +84,7 @@ while (turns < MAX_TURNS) {
   const money = await page.evaluate(() => Number(document.querySelector('.player.current .money')?.textContent.slice(1) ?? 0));
   if (kind === 'Заём' && money > 10) kind = 'Пропуск';
   if (money < 8 && kinds.includes('Заём') && Math.random() < 0.8) kind = 'Заём';
-  await click(kind, '.action-grid');
+  await clickAction(kind);
   await sleep(250);
 
   if (kind === 'Разведка') {
@@ -100,7 +111,7 @@ while (turns < MAX_TURNS) {
     if (process.env.DEBUG) console.log('НЕ ВЫШЛО', kind, '|', await page.evaluate(() => document.querySelector('.draft')?.innerText.replace(/\s+/g, ' ').slice(0, 400)));
     await click('Отмена', '.draft');
     await sleep(100);
-    await click('Пропуск', '.action-grid');
+    await clickAction('Пропуск');
     await sleep(150);
     await clickRandom('.hand-card.can');
     await sleep(150);
